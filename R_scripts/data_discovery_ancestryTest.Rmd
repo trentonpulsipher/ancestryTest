@@ -1,0 +1,198 @@
+---
+title: "Ancestry Product Analytics Homework Assignment"
+author: "Trenton Pulsipher"
+date: "11/10/2018"
+output: html_document
+---
+
+
+```{r settings, echo = F, warning = F, message = F, error = F}
+knitr::opts_chunk$set(
+  echo = F,
+  message = F,
+  warning = F,
+  error = F,
+  fig.height = 3,
+  fig.width = 9.5,
+  cache = F
+)
+
+# Libraries 
+library(lubridate)
+library(stopwords)
+library(tidyverse)
+library(trelliscopejs)
+library(wordcloud)
+library(HSPSUtils) # install_github("HSPS-DataScience/HSPSUtils")
+                   # devtools::update_packages("HSPSUtils")
+library(rbokeh)
+library(ggpubr)
+```
+
+
+```{r dataIn}
+# Read in Data
+data <- read_csv("~/Documents/Development/R/data/ancestryTest/take-home_exercise_data.csv") %>%
+  select(-X1) %>%
+  rename(customer_type_grp = customer_type_group)
+```
+
+
+## Initial Look at Data
+
+### Dataset 
+
+```{r dataTable}
+create_datetable <- function(data) {
+  ## data table
+  DT::datatable(
+    data, # %>%
+      # sample_n(1000),
+      options = list(
+        pageLength = 5,
+        searching = T,
+        scrollX = T
+      )
+    )
+}
+create_datetable(data)
+```
+
+
+### Data Summary
+
+```{r dataSummary}
+create_data_summary <- function(data) {
+  # convert column names for use here
+  names(data) <- str_replace_all(names(data), "_", ".")
+
+  # Data Summary
+  data_summary <- data %>%
+    # select_if(is.numeric) %>%
+    summarise_all(funs(
+      numUnique = length(unique(.)),
+      nas = sum(is.na(.)),
+      max = max(., na.rm = T),
+      min = min(., na.rm = T),
+      mean = mean(., na.rm = T))) %>%
+    gather() %>%
+    separate(key, c("key", "stat"), sep = "_") %>%
+    spread(key, value)
+  # generate datatable from summary
+  DT::datatable(
+    data_summary,
+    options = list(
+      pageLength = 5,
+      searching = T,
+      scrollX = T
+    )
+  )
+}
+create_data_summary(data)
+```
+
+
+### Categorical Variables in Bar Charts
+
+```{r catBarCharts}
+create_bar_chart_categorical_trelli <- function(data) {
+    data %>%
+    # selection of categorical variables isn't automated yet
+      select(regtenure, customer_type_grp, daystogetresult_grp, 
+             dna_visittrafficsubtype) %>%
+      gather_group_by_count() %>%
+      ungroup() %>%
+    ggplot(aes(x = value, y = Count)) +
+      geom_bar(stat = "identity", alpha = 0.5) +
+      geom_text(aes(label = scales::comma(Count))) +
+      theme_bw() +
+      coord_flip() +
+      labs(x = "", y = "") +
+      facet_trelliscope(~ key,
+                        scales = "free",
+                        self_contained = T,
+                        width = 600,
+                        name = "categoricalVariables",
+                        group = "vars",
+                        desc = "All Variables of Type Character or Factor")
+}
+create_bar_chart_categorical_trelli(data)
+```
+
+
+### Numeric Variables in Histograms
+
+```{r numHistograms}
+create_hist_numeric <- function(data) {
+  ## histogram of all numeric variables
+  data %>%
+    select(xsell_gsa, xsell_day_exact) %>%
+    # select_if(is.numeric) %>%
+    # .select_non_id_columns() %>%
+    gather() %>%
+    filter(value >= 0) %>%
+  ggplot(aes(x = value)) +
+    geom_histogram(binwidth = .25, bins = 30) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_log10(breaks = c(0.1, 1, 10, 100, 1000, 10000),
+                  labels = c(0.1, 1, 10, 100, 1000, 10000)) +
+    facet_wrap(~ key, scales = "free", ncol = 3) +
+    theme_bw()
+}
+create_hist_numeric(data)
+```
+
+
+### Time Series Variables
+
+```{r ts}
+create_time_series <- function(data) {
+  # time series
+  data %>%
+    select_if(is.Date) %>%
+    gather_group_by_count() %>%
+    ungroup() %>%
+    figure() %>%
+      ly_points(x = value, y = Count,
+               hover = list(
+                 Date = value, Count = Count
+               ))
+  # ggplot(aes(x = value, y = Count)) +
+  #   geom_line() +
+  #   geom_smooth(method = "loess") +
+  #   theme_bw() +
+  #   facet_wrap(~ key, scales = "free") + 
+  #   labs(x = "")
+}
+create_time_series(data)
+```
+
+
+## Outliers and Notes
+
+* Categorical variables
+* 
+* Time series variables
+    + **ordercreatedate** has a date of `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% slice(1) %>% pull()` repeated `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% count() %>% pull()` times in the dataset. (Suggest removing these from the dataset.)
+    + **dnatestactivationdayid** has `r round((data %>% select(dnatestactivationdayid) %>% filter(is.na(dnatestactivationdayid)) %>% count()) / (data %>% select(dnatestactivationdayid) %>% count()), 3) * 100 `% of the values as NA.
+
+
+### Time Series Variables (improved)
+
+```{r tsImproved}
+tsi1 <- create_time_series(data %>% 
+                     filter(
+                       ordercreatedate > "2000-01-01",
+                       !is.na(dnatestactivationdayid)
+                     ) %>%
+                     select(ordercreatedate)
+                   )
+tsi2 <- create_time_series(data %>% 
+                     filter(
+                       ordercreatedate > "2000-01-01",
+                       !is.na(dnatestactivationdayid)
+                     ) %>%
+                     select(dnatestactivationdayid)
+                   )
+ggarrange(tsi1, tsi2)
+```

@@ -1,0 +1,12 @@
+[
+  {
+    "group": "vars",
+    "name": "categoricalVariables",
+    "desc": "All Variables of Type Character or Factor",
+    "n": 4,
+    "height": 500,
+    "width": 600,
+    "updated": "2018-11-10 20:58:48",
+    "keySig": "55d01da67a57593dc63b6342e788cc08"
+  }
+]
