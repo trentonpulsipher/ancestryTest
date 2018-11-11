@@ -94,11 +94,11 @@ create_data_summary(data)
 
 ### Categorical Variables in Bar Charts
 
-```{r catBarCharts}
+```{r catBarCharts, fig.height = 6}
 create_bar_chart_categorical_trelli <- function(data) {
     data %>%
     # selection of categorical variables isn't automated yet
-      select(regtenure, customer_type_grp, daystogetresult_grp, 
+      select(xsell_gsa, regtenure, customer_type_grp, daystogetresult_grp, 
              dna_visittrafficsubtype) %>%
       gather_group_by_count() %>%
       ungroup() %>%
@@ -108,13 +108,14 @@ create_bar_chart_categorical_trelli <- function(data) {
       theme_bw() +
       coord_flip() +
       labs(x = "", y = "") +
-      facet_trelliscope(~ key,
-                        scales = "free",
-                        self_contained = T,
-                        width = 600,
-                        name = "categoricalVariables",
-                        group = "vars",
-                        desc = "All Variables of Type Character or Factor")
+      facet_wrap(~key, scales = "free")
+      # facet_trelliscope(~ key,
+      #                   scales = "free",
+      #                   self_contained = T,
+      #                   width = 600,
+      #                   name = "categoricalVariables",
+      #                   group = "vars",
+      #                   desc = "All Variables of Type Character or Factor")
 }
 create_bar_chart_categorical_trelli(data)
 ```
@@ -126,7 +127,7 @@ create_bar_chart_categorical_trelli(data)
 create_hist_numeric <- function(data) {
   ## histogram of all numeric variables
   data %>%
-    select(xsell_gsa, xsell_day_exact) %>%
+    select(xsell_day_exact) %>%
     # select_if(is.numeric) %>%
     # .select_non_id_columns() %>%
     gather() %>%
@@ -145,14 +146,14 @@ create_hist_numeric(data)
 
 ### Time Series Variables
 
-```{r ts}
+```{r ts1, fig.height = 4}
 create_time_series <- function(data) {
   # time series
   data %>%
     select_if(is.Date) %>%
     gather_group_by_count() %>%
     ungroup() %>%
-    figure() %>%
+    figure(xlab = "") %>%
       ly_points(x = value, y = Count,
                hover = list(
                  Date = value, Count = Count
@@ -164,35 +165,65 @@ create_time_series <- function(data) {
   #   facet_wrap(~ key, scales = "free") + 
   #   labs(x = "")
 }
-create_time_series(data)
+create_time_series(data %>% select(ordercreatedate))
+```
+
+```{r ts2, fig.height = 4}
+create_time_series(data %>% select(dnatestactivationdayid))
 ```
 
 
 ## Outliers and Notes
 
+* ID variables
+    + ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% unique() %>% length() %>% scales::comma()``` **prospectid**s appear multiple times, accounting for ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% length() %>% scales::comma()``` rows in the dataset
 * Categorical variables
-* 
+    + **dna_visittrafficsubtype** has roughly 15 non-NA subtypes over 2000, meaning many subtypes contain very few (for some it's almost no) observations in this dataset
+    + Treating **xsell_gsa** as categorical.
+* Numeric variables
+    + **xsell_day_exact** appears to have a funky distribution, quite log looking. However, the histogram does ignore any zero values, which is roughly ```r round((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) / ((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) + (data %>% select(xsell_day_exact) %>% filter(xsell_day_exact != 0) %>% count())), 3) * 100```% of the values for that variable. May want to look at a cummulative view of some kind.
 * Time series variables
     + **ordercreatedate** has a date of `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% slice(1) %>% pull()` repeated `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% count() %>% pull()` times in the dataset. (Suggest removing these from the dataset.)
     + **dnatestactivationdayid** has `r round((data %>% select(dnatestactivationdayid) %>% filter(is.na(dnatestactivationdayid)) %>% count()) / (data %>% select(dnatestactivationdayid) %>% count()), 3) * 100 `% of the values as NA.
 
 
+### Categorial Variable Notes
+
+A closer look at dna_visittrafficsubtype shows that many of the subtypes are rarely found in this dataset.
+```{r tblVisitTraffic}
+knitr::kable(data %>% 
+        group_by(dna_visittrafficsubtype) %>% 
+        summarise(Count = n()) %>% 
+        mutate(
+          
+          Percent = 100 * (Count / sum(Count))
+        ) %>% 
+        arrange(desc(Percent)),
+     format = "markdown",
+     padding = 2) 
+```
+
+
 ### Time Series Variables (improved)
 
-```{r tsImproved}
-tsi1 <- create_time_series(data %>% 
+After removing the outlier dates (noted above) for ordercreatedate we can better see the general trend.
+```{r tsImproved1, fig.height = 4}
+create_time_series(data %>% 
                      filter(
                        ordercreatedate > "2000-01-01",
                        !is.na(dnatestactivationdayid)
                      ) %>%
                      select(ordercreatedate)
                    )
-tsi2 <- create_time_series(data %>% 
+```
+
+After removing the NAs from dnatestactivationdayid we can better see the general trend.
+```{r tsImproved2, fig.height = 4}
+create_time_series(data %>% 
                      filter(
                        ordercreatedate > "2000-01-01",
                        !is.na(dnatestactivationdayid)
                      ) %>%
                      select(dnatestactivationdayid)
                    )
-ggarrange(tsi1, tsi2)
 ```
