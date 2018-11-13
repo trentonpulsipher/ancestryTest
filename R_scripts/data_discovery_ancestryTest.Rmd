@@ -1,7 +1,8 @@
 ---
-title: "Ancestry Product Analytics Homework Assignment"
+title: "Data Discovery"
+subtitle: "Ancestry Product Analytics Homework Assignment"
 author: "Trenton Pulsipher"
-date: "11/10/2018"
+date: "`r lubridate::today()`"
 output: html_document
 ---
 
@@ -45,12 +46,14 @@ data$regtenure[data$regtenure == "<=20 day"] <- "<=20 days"
 
 ### Dataset 
 
+Below are 100 randomly selected rows from the dataset. 
+
 ```{r dataTable}
 create_datetable <- function(data) {
   ## data table
   DT::datatable(
-    data, # %>%
-      # sample_n(1000),
+    data %>%
+      sample_n(100),
       options = list(
         pageLength = 5,
         searching = T,
@@ -64,6 +67,7 @@ create_datetable(data)
 
 ### Data Summary
 
+The table below shows several metrics calculated against the various columns/variables. These metrics include: the number of unique values, number of NAs, the maximum value, the minimum value, and the mean/average.
 ```{r dataSummary}
 create_data_summary <- function(data) {
   # convert column names for use here
@@ -97,7 +101,7 @@ create_data_summary(data)
 
 ### Categorical Variables in Bar Charts
 
-```{r catBarCharts, fig.height = 7}
+```{r catBarCharts, fig.height = 8}
 create_bar_chart_categorical_trelli <- function(data) {
     data %>%
     # selection of categorical variables isn't automated yet
@@ -179,9 +183,9 @@ create_time_series(data %>% select(dnatestactivationdayid))
 ## Outliers and Notes
 
 * ID variables
-    + ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% unique() %>% length() %>% scales::comma()``` **prospectid**s appear multiple times, accounting for ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% length() %>% scales::comma()``` rows in the dataset
+    + ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% unique() %>% length() %>% scales::comma()``` **prospectid**s appear multiple times, accounting for ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% length() %>% scales::comma()``` rows in the dataset.
 * Categorical variables
-    + **dna_visittrafficsubtype** has roughly 15 non-NA subtypes over 2000, meaning many subtypes contain very few (for some it's almost no) observations in this dataset
+    + **dna_visittrafficsubtype** has roughly 15 non-NA subtypes over 2000, meaning many subtypes contain very few (for some it's almost no) observations in this dataset. May prefer to combine subtypes later.
     + Treating **xsell_gsa** as categorical.
 * Numeric variables
     + **xsell_day_exact** appears to have a funky distribution, quite log looking. However, the histogram does ignore any zero values, which is roughly ```r round((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) / ((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) + (data %>% select(xsell_day_exact) %>% filter(xsell_day_exact != 0) %>% count())), 3) * 100```% of the values for that variable. May want to look at a cummulative view of some kind.
@@ -192,7 +196,7 @@ create_time_series(data %>% select(dnatestactivationdayid))
 
 ### Categorial Variable Notes
 
-A closer look at dna_visittrafficsubtype shows that many of the subtypes are rarely found in this dataset.
+A closer look at dna_visittrafficsubtype shows that many of the subtypes are rarely found in this dataset. Grouping or combining these in a meaningful manner may help, but unfortunately I doubt I have sufficient information or experience to group the levels of this variable.
 ```{r tblVisitTraffic}
 DT::datatable(
   data %>% 
@@ -242,7 +246,7 @@ create_time_series(data %>%
 
 ##### Daily Trend
 
-Variance appears to tighten up in 2016-2017 and the obvious drop in late 2016 to 2017 will cause problems for most models. Forecasting or predicting could prove difficult if the model isn't able to account for those two behaviors.
+Variance appears to tighten up in 2016-2017 and the obvious drop in late 2016 to 2017 will cause problems for most models. Forecasting or predicting could prove difficult if the model isn't able to account for the sudden drop.
 
 ```{r dailyPct}
 data %>%
@@ -305,7 +309,7 @@ A more detailed view of this daily xsell conversion may help us understand what 
          title = "Percent of DNA Orders Created Converted to Xsell")
 ```
 
-```{r dailyPctByRegtenure}
+```{r dailyPctByRegtenure, fig.height = 4}
   data %>%
     filter(ordercreatedate > "2000-01-01") %>%
     mutate(regtenure = factor(regtenure, 
@@ -331,8 +335,8 @@ A more detailed view of this daily xsell conversion may help us understand what 
 ```
 
 
-I must not understand the **regtenure** column
-```{r histExactVsRegtenure}
+I must not understand the **regtenure** column yet.
+```{r histExactVsRegtenure, fig.height = 4}
 data %>% 
   filter(ordercreatedate > "2000-01-01") %>% 
     mutate(regtenure = factor(regtenure, 

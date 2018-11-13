@@ -1,0 +1,73 @@
+---
+title: "Ancestry Product Analytics Homework Assignment"
+author: "Trenton Pulsipher"
+date: "`r lubridate::today()`"
+output: html_document
+---
+
+```{r settings, echo = F, warning = F, message = F, error = F}
+knitr::opts_chunk$set(
+  echo = F,
+  message = F,
+  warning = F,
+  error = F,
+  fig.height = 3,
+  fig.width = 9.5,
+  cache = F
+)
+
+# Libraries 
+library(lubridate)
+library(stopwords)
+library(tidyverse)
+library(trelliscopejs)
+library(wordcloud)
+library(HSPSUtils) # install_github("HSPS-DataScience/HSPSUtils")
+# devtools::update_packages("HSPSUtils")
+library(rbokeh)
+library(ggpubr)
+```
+
+
+```{r dataIn}
+# Read in Data
+data <- read_csv("~/Documents/Development/R/data/ancestryTest/take-home_exercise_data.csv") %>%
+  select(-X1) %>%
+  rename(customer_type_grp = customer_type_group)
+
+# fix the mislabeled regtenure 20 day group
+data$regtenure[data$regtenure == "<=20 day"] <- "<=20 days"
+
+# remove "bad" dates, add xsell identifier
+data <- data %>%
+  filter(ordercreatedate > "2000-01-01") %>%
+  # group_by(ordercreatedate) %>%
+  mutate(
+    xsell_120rule = if_else(xsell_day_exact <= 120, 1, 0),
+    xsell = if_else(xsell_120rule & xsell_gsa, 1, 0)
+  )
+  # ) %>%
+  # summarise(PercentConverted = sum(xsell) / length(xsell)) %>%
+
+```
+
+
+The [homework assignment document](ManagerProductAnalyticsHomeworkAssignment.pdf)
+
+1. Define the problem: What is the cross-sell status today based on the dataset? For
+example, what fraction of the observed users cross-sell to subscription? Perform any
+cleaning, exploratory analysis, and/or visualizations to use the provided data for this
+analysis (a few sentences/plots describing your approach will suffice).
+2. Discuss your analytics plan/steps to derive insights, identify opportunities, and
+recommend any optimization. How Ancestry might leverage the insights gained from the
+analytics deliverable to improve?
+3. If you need to design an analytical framework to learn the impact of the abovementioned
+insights iteratively, what experimentation method would you use to verify the
+recommendations:
+    * How would you set up the experiment? Test vs. Control or other.
+    * What data or information is necessary to determine the sample size and duration
+of the experiment? Which metrics would you plan to track that define
+performance of the test?
+    * What method would you use to analyze the test results? Why?
+    * Based on your method, when would you be able to say that we can go ahead
+launch the new product?

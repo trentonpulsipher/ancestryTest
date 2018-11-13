@@ -1,0 +1,80 @@
+---
+title: "Trelliscopejs Visualizations"
+subtitle: "Ancestry Product Analytics Homework Assignment"
+author: "Trenton Pulsipher"
+date: "`r lubridate::today()`"
+output: html_document
+---
+  
+
+```{r settings, echo = F, warning = F, message = F, error = F}
+knitr::opts_chunk$set(
+  echo = F,
+  message = F,
+  warning = F,
+  error = F,
+  fig.height = 3,
+  fig.width = 9.5,
+  cache = F
+)
+
+# Libraries 
+library(lubridate)
+library(stopwords)
+library(tidyverse)
+library(trelliscopejs)
+library(wordcloud)
+library(HSPSUtils) # install_github("HSPS-DataScience/HSPSUtils")
+# devtools::update_packages("HSPSUtils")
+library(rbokeh)
+library(ggpubr)
+```
+
+
+```{r dataIn}
+# Read in Data
+data <- read_csv("~/Documents/Development/R/data/ancestryTest/take-home_exercise_data.csv") %>%
+  select(-X1) %>%
+  rename(customer_type_grp = customer_type_group)
+
+# fix the mislabeled regtenure 20 day group
+data$regtenure[data$regtenure == "<=20 day"] <- "<=20 days"
+
+# remove "bad" dates, add xsell identifier
+data <- data %>%
+  filter(ordercreatedate > "2000-01-01") %>%
+  # group_by(ordercreatedate) %>%
+  mutate(
+    xsell_120rule = if_else(xsell_day_exact <= 120, 1, 0),
+    xsell = if_else(xsell_120rule & xsell_gsa, 1, 0)
+  )
+  # ) %>%
+  # summarise(PercentConverted = sum(xsell) / length(xsell)) %>%
+
+```
+
+[Trelliscopejs](https://hafen.github.io/trelliscopejs/) is an R package that enables one to quickly sort and/or filter through various slices of their previously generated visualizations/plots of their data. In this case we may want to look through all levels of the variable, **dna_visittrafficsubtype**. To do this we simply create a generic plot, apply only one slice/level/subset (subtype) at a time to the plot, and create any features that might help us learn about the effects of **dna_visittrafficsubtype** on the data. We can then sort and filter through the feature set to find anomolies or interesting behaviors that might influence modeling or help us understand the relationship between variables in the data. 
+
+
+```{r catBarCharts, fig.height = 8, eval = F}
+data %>%
+  # selection of categorical variables isn't automated yet
+  select(xsell_gsa, regtenure, customer_type_grp, daystogetresult_grp, 
+         dna_visittrafficsubtype) %>%
+  gather_group_by_count() %>%
+  ungroup() %>%
+  ggplot(aes(x = value, y = Count)) +
+  geom_bar(stat = "identity", alpha = 0.5) +
+  geom_text(aes(label = scales::comma(Count))) +
+  theme_bw() +
+  coord_flip() +
+  labs(x = "", y = "") +
+  facet_trelliscope(~ key,
+                    scales = "free",
+                    self_contained = T,
+                    width = 600,
+                    name = "categoricalVariables",
+                    group = "vars",
+                    desc = "All Variables of Type Character or Factor")
+```
+

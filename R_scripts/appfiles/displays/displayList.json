@@ -3,10 +3,10 @@
     "group": "vars",
     "name": "categoricalVariables",
     "desc": "All Variables of Type Character or Factor",
-    "n": 4,
+    "n": 5,
     "height": 500,
     "width": 600,
-    "updated": "2018-11-10 22:20:43",
-    "keySig": "55d01da67a57593dc63b6342e788cc08"
+    "updated": "2018-11-13 06:27:15",
+    "keySig": "5e638ec041f1df9023544ee2b9fbfe83"
   }
 ]
