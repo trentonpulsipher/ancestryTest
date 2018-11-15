@@ -1,0 +1,2 @@
+You can find my reponse to the Ancestry Product Analyst Homework Assignment in the file https://github.com/trentonpulsipher/ancestryTest/tree/master/R_scripts/assignment_answers_ancestryTest.html.
+The supplemental data discovery and initial look at the data I made are found in https://github.com/trentonpulsipher/ancestryTest/tree/master/R_scripts/data_discovery_ancestryTest.html, which is linked to the assignment result file above.
