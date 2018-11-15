@@ -46,13 +46,11 @@ data <- data %>%
     xsell_120rule = if_else(xsell_day_exact <= 120, 1, 0),
     xsell = if_else(xsell_120rule & xsell_gsa, 1, 0)
   )
-  # ) %>%
-  # summarise(PercentConverted = sum(xsell) / length(xsell)) %>%
 
 ```
 
 
-The [homework assignment document](ManagerProductAnalyticsHomeworkAssignment.pdf)
+The [homework assignment document](ManagerProductAnalyticsHomeworkAssignment.pdf) shared with me contained the following questions.
 
 1. Define the problem: What is the cross-sell status today based on the dataset? For
 example, what fraction of the observed users cross-sell to subscription? Perform any
@@ -71,3 +69,62 @@ performance of the test?
     * What method would you use to analyze the test results? Why?
     * Based on your method, when would you be able to say that we can go ahead
 launch the new product?
+
+### 1. Define the problem and determine current cross-sell state
+
+My initial look at the data can be found [here](data_discovery_ancestryTest.html). To summarise, the percentage of observed users cross-sell to subscription appears to have slowly increased from roughly 11% in mid 2013 to a peak of roughly 15% in mid 2016. As I explained at the end of my data discovery file, the drop in conversion percentage is a result of the time lag to cross-sell. That drop will likely always exist at the most recent point in time and eventually those daily percentages will increase as more time passes. 
+
+If one was asked to predict cross-sell percentage today (or mid 2017 for the group of customers still in the "drop phase") or even in the future I would start by fitting a linear regression model to the time series shown. I would limit the input data to be from mid 2013 to mid/late 2016. While there is at least one clear seasonal effect (strong dip every December), the variability isn't crazy so a simple linear model may be sufficient for an intial forecast. The next section will include plans to learn more about what is affecting this increasing cross-sell conversion and how one might generate the insights necessary to develop future experimentation opportunities.
+
+```{r xsellOverall}
+g1 <- data %>%
+  group_by(ordercreatedate) %>%
+  summarise(PercentConverted = sum(xsell) / length(xsell)) %>%
+  mutate(ym = paste(year(ordercreatedate), month(ordercreatedate), "01", sep = "-")) %>%
+  group_by(ym) %>%
+  mutate(monthlyAvg = mean(PercentConverted)) %>%
+  ggplot(aes(x = ordercreatedate, y = PercentConverted)) +
+    geom_point(alpha = 0.25, color = "blue") +
+    geom_line(aes(y = monthlyAvg), size = .8) +
+    scale_y_continuous(limits = c(0,1), 
+                       breaks = seq(0,1,by=.2), 
+                       labels = paste0(seq(0,1,by=.2)*100, "%")) +
+    theme_bw() +
+    labs(x = "", title = "Complete dataset",
+         y = "% Conversion of DNA Orders to Xsell")
+# zoomed in version
+g2 <- data %>%
+  group_by(ordercreatedate) %>%
+  summarise(PercentConverted = sum(xsell) / length(xsell)) %>%
+  mutate(ym = paste(year(ordercreatedate), month(ordercreatedate), "01", sep = "-")) %>%
+  group_by(ym) %>%
+  mutate(monthlyAvg = mean(PercentConverted)) %>%
+  ggplot(aes(x = ordercreatedate, y = PercentConverted)) +
+    geom_point(alpha = 0.25, color = "blue") +
+    geom_line(aes(y = monthlyAvg), size = .8) +
+    scale_y_continuous(limits = c(0,.25), 
+                       breaks = seq(0,1,by=.02), 
+                       labels = paste0(seq(0,1,by=.02)*100, "%")) +
+    theme_bw() +
+    labs(x = "", title = "Zoomed-In View",
+         y = "% Conversion of DNA Orders to Xsell")
+
+ggarrange(g1, g2)
+```
+
+I have chosen to group by the ordercreatedate, thus calculating cross-sell conversion by date rather than by customer and date. The only reason for doing so is that the majority of customers (`r round(data %>% group_by(prospectid) %>% summarise(Count = n()) %>% mutate(gt1 = if_else(Count > 1, 0, 1)) %>% ungroup() %>% summarise(pct = sum(gt1) / length(gt1)) %>% pull() * 100, 3)`%) only made one DNA kit purchase (and I am limited in analysis time).
+
+
+### 2. Analytics plan to derive insights, identify opportunities, and recommend any optimization. 
+
+Generating insights may be as simple as some in-depth visualization, but more likely we would fit a model and look at the coefficients for the various inputs and levels of input variables (for categorical variables). Again subsetting to relevant data, only customers that had ordercreate dates between mid 2013 to mid 2016 would be included. I wish I understood a little be more about these other variables like regtenure, dna_visittrafficsubtype, xsell_day_exact, and even customer_type_grp.
+
+Models we could use include any regression based methods or machine learning (ML) algorithms. ML is only useful for prediction unless we choose one of the few algorithms where people have built explainer functions. Otherwise our predictive capability may be great but we would likely lack the insight needed to approach future experimentation/adjustments to drive the conversion higher. More and more of these explainers are being built such that one can extract information, such as variable importance, from the black-box ML models. 
+
+Logistic regression, where the response is if the customer converted to the cross-sell or not, would provide a different view into what customer segments may be more likely to purchase the cross-sell product. This customer centric approach will likely provide a unique perspective to marketings efforts, demographic/geographical importance, and the time to conversion. ML methods could obviously be applied here, only using classification-based instead of regression-based algorithms.
+
+I see the two approaches as a way to answer the same questions from separate angles; logistic regression to determine which customers are more likely to convert and why, and time-series/continuous regression to determine effects of time-related seasonality, marketing interventions, or other effects as it relates to the general trend. Both would help build the story of what has worked in the past and what experimentation to use in the near future.
+
+
+### 3. Experimentation method recommendations
+

@@ -266,7 +266,7 @@ create_time_series(data %>%
 
 ##### Daily Trend
 
-Variance appears to tighten up in 2016-2017 and the obvious drop in late 2016 to 2017 will cause problems for most models. Forecasting or predicting could prove difficult if the model isn't able to account for the sudden drop. The drop is also temporary, meaning it will always exist at the end of the time series because that cross-sell conversion requires time to happen. Recent orders purchased (say in the last week, or end of the time series) will have a very low percent of cross-sells because most of the cross-sells require more time to occur. A few weeks/months later that cross-sell percentage will have increased dramatically, because sufficient time has occurred to allow the customer time to buy the cross-sell product. In short, modeling the cross-sell percentage will always have this limitation (recent drop) and one would have to overcome that by weighting past observations higher than the most recent. It would be somewhat difficult (definitely tricky).
+Variance appears to tighten up in 2016-2017 and the obvious drop in late 2016 to 2017 will cause problems for most models. Forecasting or predicting using the full dataset could prove difficult if the model isn't able to account for the sudden drop (which most models cannot adequately account for the drop). The drop is also temporary, meaning it will always exist at the end of the time series because cross-sell conversion requires time before it matures to the real number. Recent orders purchased (say in the last week, or end of the time series) will have a very low percent of cross-sells, because most of the cross-sells require more time to occur. A few weeks/months later that cross-sell percentage will have increased dramatically. In short, modeling the cross-sell percentage will always have this limitation (recent drop) and one would have to overcome that by weighting past observations higher than the most recent (very tricky) or more likely one would just model up to the "mature" portion of the cross-sell percentage. I can think of several ways to use the drop information in modeling but that would be a very academic exercise and not necessarily improve the overall prediction - it may however speed up reaction to any changes in cross-sell conversion.
 
 ```{r dailyPct}
 data %>%
@@ -287,7 +287,7 @@ data %>%
          title = "Percent of DNA Orders Created Converted to Xsell")
 ```
 
-A more detailed view of this daily xsell conversion may help us understand what is influencing this behavior and how that might affect model construction. Given the statements above it wouldn't be wise to pursue this further, so I only show it broken out by the customer type group. 
+A more detailed view of this daily xsell conversion may help us understand what is influencing this behavior and how that might affect model construction. I only show it broken out by the customer type group. 
 
 ```{r dailyPctByVars1, fig.height = 4}
 # dailyPctByVar <- function(data, facetVar) {
@@ -324,7 +324,7 @@ A more detailed view of this daily xsell conversion may help us understand what 
                        labels = paste0(seq(0,1,by=.2)*100, "%")) +
     facet_grid(customer_type_grp ~ .) +
     theme_bw() +
-    theme(strip.text.x = element_text(angle = 0)) +
+    theme(strip.text.y = element_text(angle = 0)) +
     labs(x = "", y = "Percent",
          title = "Percent of DNA Orders Created Converted to Xsell")
 ```
