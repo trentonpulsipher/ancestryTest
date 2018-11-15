@@ -101,7 +101,7 @@ create_data_summary(data)
 
 ### Categorical Variables in Bar Charts
 
-A quick look at counts of the various levels of the categorical variables found in the data is shown in the following set of bar charts. [Trelliscopejs](https://hafen.github.io/trelliscopejs/) is an R package that enables one to quickly sort and/or filter through various slices of their previously generated visualizations/plots of their data. In one case we may want to look through all levels of the variable, dna_visittrafficsubtype (I don't show that here). To do this we simply create a generic plot, apply only one slice/level/subset (subtype) at a time to the plot, and create any features that might help us learn about the effects of dna_visittrafficsubtype on the data. We can then sort and filter through the feature set to find anomolies or interesting behaviors that might influence modeling or help us understand the relationship between variables in the data. 
+A quick look at counts of the various levels of the categorical variables found in the data is shown in the following set of bar charts. [Trelliscopejs](https://hafen.github.io/trelliscopejs/) is an R package that enables one to quickly sort and/or filter through various slices of their previously generated visualizations/plots of their data. In one case we may want to look through all levels of the variable, `dna_visittrafficsubtype` (I don't show that here). To do this we simply create a generic plot, apply only one slice/level/subset (subtype) at a time to the plot, and create any features that might help us learn about the effects of `dna_visittrafficsubtype` on the data. We can then sort and filter through the feature set to find anomalies or interesting behaviors that might influence modeling or help us understand the relationship between variables in the data. 
 
 For this dataset the number of categorical variables is not overwhelming so the power of trelliscope may appear limited. However, when one needs to quickly move through 100s, 1000s or even millions of slices of the data, trelliscope provides a seemless interface to manage so many subsets of data and better discover interesting features.
 ```{r catBarCharts, fig.height = 8}
@@ -133,7 +133,7 @@ create_bar_chart_categorical_trelli(data)
 
 ### Numeric Variables in Histograms
 
-The only numeric variable, xsell_day_exact, is highly skewed so a log transformation better shows the distribution of values.
+The only numeric variable, `xsell_day_exact`, is highly skewed so a log transformation better shows the distribution of values.
 ```{r numHistograms}
 create_hist_numeric <- function(data) {
   ## histogram of all numeric variables
@@ -188,20 +188,20 @@ create_time_series(data %>% select(dnatestactivationdayid), title = "dnatestacti
 ## Outliers and Notes
 
 * ID variables
-    + ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% unique() %>% length() %>% scales::comma()``` **prospectid**s appear multiple times, accounting for ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% length() %>% scales::comma()``` rows in the dataset.
+    + ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% unique() %>% length() %>% scales::comma()``` `prospectid`s appear multiple times, accounting for ```r data %>% group_by(prospectid) %>% mutate(Count = n()) %>% filter(Count > 1) %>% pull(prospectid) %>% length() %>% scales::comma()``` rows in the dataset.
 * Categorical variables
-    + **dna_visittrafficsubtype** has roughly 15 non-NA subtypes over 2000, meaning many subtypes contain very few (for some it's almost no) observations in this dataset. May prefer to combine subtypes later.
-    + Treating **xsell_gsa** as categorical.
+    + `dna_visittrafficsubtype` has roughly 15 non-NA subtypes over 2000, meaning many subtypes contain very few (for some it's almost no) observations in this dataset. May prefer to combine subtypes later.
+    + Treating `xsell_gsa` as categorical.
 * Numeric variables
-    + **xsell_day_exact** appears to have a funky distribution, quite log looking. However, the histogram does ignore any zero values, which is roughly ```r round((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) / ((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) + (data %>% select(xsell_day_exact) %>% filter(xsell_day_exact != 0) %>% count())), 3) * 100```% of the values for that variable. May want to look at a cummulative view of some kind.
+    + `xsell_day_exact` appears to have a funky distribution, quite log looking. However, the histogram does ignore any zero values, which is roughly ```r round((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) / ((data %>% select(xsell_day_exact) %>% filter(xsell_day_exact == 0) %>% count()) + (data %>% select(xsell_day_exact) %>% filter(xsell_day_exact != 0) %>% count())), 3) * 100```% of the values for that variable. May want to look at a cummulative view of some kind.
 * Time series variables
-    + **ordercreatedate** has a date of `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% slice(1) %>% pull()` repeated `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% count() %>% pull()` times in the dataset. (Suggest removing these from the dataset.)
-    + **dnatestactivationdayid** has `r round((data %>% select(dnatestactivationdayid) %>% filter(is.na(dnatestactivationdayid)) %>% count()) / (data %>% select(dnatestactivationdayid) %>% count()), 3) * 100 `% of the values as NA.
+    + `ordercreatedate` has a date of `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% slice(1) %>% pull()` repeated `r data %>% select(ordercreatedate) %>% filter(ordercreatedate < "2000-01-01") %>% count() %>% pull()` times in the dataset. (Suggest removing these from the dataset.)
+    + `dnatestactivationdayid` has `r round((data %>% select(dnatestactivationdayid) %>% filter(is.na(dnatestactivationdayid)) %>% count()) / (data %>% select(dnatestactivationdayid) %>% count()), 3) * 100 `% of the values as NA.
 
 
 ### Categorial Variable Notes
 
-A closer look at dna_visittrafficsubtype shows that many of the subtypes are rarely found in this dataset. Grouping or combining these in a meaningful manner may help, but unfortunately I doubt I have sufficient information or experience to group the levels of this variable at this time.
+A closer look at `dna_visittrafficsubtype` shows that many of the subtypes are rarely found in this dataset. Grouping or combining these in a meaningful manner may help, but unfortunately I doubt I have sufficient information or experience to group the levels of this variable at this time.
 ```{r tblVisitTraffic}
 DT::datatable(
   data %>% 
@@ -220,7 +220,7 @@ DT::datatable(
 )
 ```
 
-I must not understand the regtenure column yet. I would have assumed that regtenure was just a categorical view of xsell_day_exact. From the histograms below I must be missing something and those two variables are not linked in any way.
+I must not understand the `regtenure` column yet. I would have assumed that `regtenure` was just a categorical view of `xsell_day_exact`. From the histograms below I must be missing something and those two variables are not linked in any way.
 ```{r histExactVsRegtenure, fig.height = 4}
 data %>% 
   filter(ordercreatedate > "2000-01-01") %>% 
@@ -238,7 +238,7 @@ data %>%
 
 ### Time Series Variables (improved)
 
-After removing the outlier dates (noted above) for ordercreatedate we can better see the general trend. Though really to see that trend one would need to zoom into the main group of data (not include the high points from last year's sale around Thanksgiving). In fact, after zooming in to see that general positive sloped trend one notices several days of observations that are very low and warrant further consideration (March 21-30, 2018).
+After removing the outlier dates (noted above) for `ordercreatedate` we can better see the general trend. Though really to see that trend one would need to zoom into the main group of data (not include the high points from last year's sale around Thanksgiving). In fact, after zooming in to see that general positive sloped trend one notices several days of observations that are very low and warrant further consideration (March 21-30, 2018).
 ```{r tsImproved1, fig.height = 4}
 create_time_series(data %>% 
                      filter(
@@ -249,7 +249,7 @@ create_time_series(data %>%
                    , title = "ordercreatedate")
 ```
 
-After removing the NAs from dnatestactivationdayid we can better see the general trend.
+After removing the NAs from `dnatestactivationdayid` we can better see the general trend.
 ```{r tsImproved2, fig.height = 4}
 create_time_series(data %>% 
                      filter(
