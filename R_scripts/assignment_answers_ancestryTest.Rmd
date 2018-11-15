@@ -74,7 +74,7 @@ launch the new product?
 
 My initial look at the data can be found [here](data_discovery_ancestryTest.html) or at https://github.com/trentonpulsipher/ancestryTest/blob/master/R_scripts/data_discovery_ancestryTest.html. To summarize, the percentage of observed users cross-sell to subscription appears to have slowly increased from roughly 11% in mid 2013 to a peak of roughly 15% in mid 2016. As I explained at the end of my data discovery file, the drop in conversion percentage is a result of the time lag to cross-sell. That drop will likely always exist at the most recent point in time and eventually those daily percentages will increase as more time passes. 
 
-If one was asked to predict cross-sell percentage today (or mid 2017 for the group of customers still in the "drop phase") or even in the future I would start by fitting a linear regression model to the time series shown. I would limit the input data to be from mid 2013 to mid/late 2016. While there is at least one clear seasonal effect (strong dip every December), the variability appears relatively consistent so a simple linear model may be sufficient for an intial forecast. The next section will include plans to learn more about what is affecting this increasing cross-sell conversion and how one might generate the insights necessary to develop future experimentation opportunities.
+If one was asked to predict cross-sell percentage today (or mid 2017 for the group of customers still in the "drop phase") or even in the future I would start by fitting a linear regression model to the time series shown. I would limit the input data to be from mid 2013 to mid/late 2016. While there is at least one clear seasonal effect (strong dip every December), the variability appears relatively consistent so a simple linear model may be sufficient for an initial forecast. The next section will include plans to learn more about what is affecting this increasing cross-sell conversion and how one might generate the insights necessary to develop future experimentation opportunities.
 
 ```{r xsellOverall}
 g1 <- data %>%
@@ -117,9 +117,9 @@ I have chosen to group by the `ordercreatedate`, thus calculating cross-sell con
 
 ### 2. Analytics plan to derive insights, identify opportunities, and recommend any optimization. 
 
-Generating insights may be as simple as some in-depth visualization, but modeling the data will provide more definitive value. More modeling, I recommend subsetting to relevant data (only customers that had `ordercreatedate`s between mid 2013 to mid 2016) and prediction the percent of cross-sell conversions. I wish I understood a little more about these other variables like `regtenure`, `dna_visittrafficsubtype`, `xsell_day_exact`, and even `customer_type_grp`. A deeper business awareness might help me know how to leverage those variables when modeling.
+Generating insights may be as simple as some in-depth visualization, but modeling the data will provide more definitive value. For modeling, I recommend subsetting to relevant data (only customers that had `ordercreatedate`s between mid 2013 to mid 2016) and predicting the percent of cross-sell conversions. I would like to understood a little more about these other variables like `regtenure`, `dna_visittrafficsubtype`, `xsell_day_exact`, and even `customer_type_grp`. A deeper business awareness might help me know how to leverage those variables when modeling.
 
-Models we could use include any regression based methods or machine learning (ML) algorithms. ML is primarily beneficial when predicting, but we could choose one of the few algorithms where people have built explainer functions. Our predictive capability may be great, but we would likely lack the insight needed to approach future experimentation/adjustments to drive the conversion higher.
+Models we could use include any regression based methods or machine learning (ML) algorithms. ML is primarily beneficial when predicting, but we could choose one of the few algorithms where people have built explainer functions that derive the insight sought. Predictive capability in ML may be great, but we would likely lack the insight needed to approach future experimentation/adjustments to drive the conversion higher without some explanation.
 
 ML methods utilizing a logistic regression approach, where the response is if the customer converted to the cross-sell or not, would show a different viewpoint. This customer-centric approach will likely provide a unique perspective to marketings efforts, demographic/geographical importance, and the time to conversion. ML methods could obviously be applied here using classification-based, instead of regression-based algorithms.
 
@@ -133,7 +133,7 @@ Let's assume that the modeling effort revealed five influential variables, two f
 Given various levels of evidence of success one might:
 
 1. launch immediately, 
-2. return to the experimentation to try to find additional support/evidence in a way not previously experimented upon, or 
+2. return to experimentation to try to find additional support/evidence in a way not previously experimented upon, or 
 3. don't implement the feature/product at this time. 
 
 All options should consider costs (financial, code maintenance, failure or poor customer experience potential, etc.) and benefits (improved customer experience/engagement, future potential upsell opportunities, incremental revenue, etc.) associated with the decision. In some cases a future return to the same or very similar experiment might lead to a different outcome so creating a reproducible environment for future runs may prove valuable.
