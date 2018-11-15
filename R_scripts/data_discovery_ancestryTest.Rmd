@@ -101,6 +101,9 @@ create_data_summary(data)
 
 ### Categorical Variables in Bar Charts
 
+A quick look at counts of the various levels of the categorical variables found in the data is shown in the following set of bar charts. [Trelliscopejs](https://hafen.github.io/trelliscopejs/) is an R package that enables one to quickly sort and/or filter through various slices of their previously generated visualizations/plots of their data. In one case we may want to look through all levels of the variable, dna_visittrafficsubtype (I don't show that here). To do this we simply create a generic plot, apply only one slice/level/subset (subtype) at a time to the plot, and create any features that might help us learn about the effects of dna_visittrafficsubtype on the data. We can then sort and filter through the feature set to find anomolies or interesting behaviors that might influence modeling or help us understand the relationship between variables in the data. 
+
+For this dataset the number of categorical variables is not overwhelming so the power of trelliscope may appear limited. However, when one needs to quickly move through 100s, 1000s or even millions of slices of the data, trelliscope provides a seemless interface to manage so many subsets of data and better discover interesting features.
 ```{r catBarCharts, fig.height = 8}
 create_bar_chart_categorical_trelli <- function(data) {
     data %>%
@@ -115,14 +118,14 @@ create_bar_chart_categorical_trelli <- function(data) {
       theme_bw() +
       coord_flip() +
       labs(x = "", y = "") +
-      facet_wrap(~key, scales = "free")
-      # facet_trelliscope(~ key,
-      #                   scales = "free",
-      #                   self_contained = T,
-      #                   width = 600,
-      #                   name = "categoricalVariables",
-      #                   group = "vars",
-      #                   desc = "All Variables of Type Character or Factor")
+      # facet_wrap(~key, scales = "free")
+      facet_trelliscope(~ key,
+                        scales = "free",
+                        self_contained = T,
+                        width = 600,
+                        name = "categoricalVariables",
+                        group = "vars",
+                        desc = "All Variables of Type Character or Factor")
 }
 create_bar_chart_categorical_trelli(data)
 ```
@@ -130,6 +133,7 @@ create_bar_chart_categorical_trelli(data)
 
 ### Numeric Variables in Histograms
 
+The only numeric variable, xsell_day_exact, is highly skewed so a log transformation better shows the distribution of values.
 ```{r numHistograms}
 create_hist_numeric <- function(data) {
   ## histogram of all numeric variables
@@ -153,14 +157,15 @@ create_hist_numeric(data)
 
 ### Time Series Variables
 
+As noted in the section below, outliers and NAs make it difficult to initially see the trends over time of these two time series related variables.
 ```{r ts1, fig.height = 4}
-create_time_series <- function(data) {
+create_time_series <- function(data, title) {
   # time series
   data %>%
     select_if(is.Date) %>%
     gather_group_by_count() %>%
     ungroup() %>%
-    figure(xlab = "") %>%
+    figure(xlab = "", title = title) %>%
       ly_points(x = value, y = Count,
                hover = list(
                  Date = value, Count = Count
@@ -172,11 +177,11 @@ create_time_series <- function(data) {
   #   facet_wrap(~ key, scales = "free") + 
   #   labs(x = "")
 }
-create_time_series(data %>% select(ordercreatedate))
+create_time_series(data %>% select(ordercreatedate), title = "ordercreatedate")
 ```
 
 ```{r ts2, fig.height = 4}
-create_time_series(data %>% select(dnatestactivationdayid))
+create_time_series(data %>% select(dnatestactivationdayid), title = "dnatestactivationdayid")
 ```
 
 
@@ -196,7 +201,7 @@ create_time_series(data %>% select(dnatestactivationdayid))
 
 ### Categorial Variable Notes
 
-A closer look at dna_visittrafficsubtype shows that many of the subtypes are rarely found in this dataset. Grouping or combining these in a meaningful manner may help, but unfortunately I doubt I have sufficient information or experience to group the levels of this variable.
+A closer look at dna_visittrafficsubtype shows that many of the subtypes are rarely found in this dataset. Grouping or combining these in a meaningful manner may help, but unfortunately I doubt I have sufficient information or experience to group the levels of this variable at this time.
 ```{r tblVisitTraffic}
 DT::datatable(
   data %>% 
@@ -215,10 +220,25 @@ DT::datatable(
 )
 ```
 
+I must not understand the regtenure column yet. I would have assumed that regtenure was just a categorical view of xsell_day_exact. From the histograms below I must be missing something and those two variables are not linked in any way.
+```{r histExactVsRegtenure, fig.height = 4}
+data %>% 
+  filter(ordercreatedate > "2000-01-01") %>% 
+    mutate(regtenure = factor(regtenure, 
+                              levels = c("No Reg Date", "Order prior to reg",
+                                         "<=10 days", "<=20 days", "<=30 days",
+                                         "<=60 days", "<=90 days", "<=120 days",
+                                         "More than 120 days old"))) %>%
+  ggplot(aes(x = xsell_day_exact)) + 
+    geom_histogram() + 
+    theme_bw() + 
+    facet_wrap(~regtenure, scales = "free")
+```
+
 
 ### Time Series Variables (improved)
 
-After removing the outlier dates (noted above) for ordercreatedate we can better see the general trend.
+After removing the outlier dates (noted above) for ordercreatedate we can better see the general trend. Though really to see that trend one would need to zoom into the main group of data (not include the high points from last year's sale around Thanksgiving). In fact, after zooming in to see that general positive sloped trend one notices several days of observations that are very low and warrant further consideration (March 21-30, 2018).
 ```{r tsImproved1, fig.height = 4}
 create_time_series(data %>% 
                      filter(
@@ -226,7 +246,7 @@ create_time_series(data %>%
                        !is.na(dnatestactivationdayid)
                      ) %>%
                      select(ordercreatedate)
-                   )
+                   , title = "ordercreatedate")
 ```
 
 After removing the NAs from dnatestactivationdayid we can better see the general trend.
@@ -237,7 +257,7 @@ create_time_series(data %>%
                        !is.na(dnatestactivationdayid)
                      ) %>%
                      select(dnatestactivationdayid)
-                   )
+                   , title = "dnatestactivationdayid")
 ```
 
 
@@ -246,7 +266,7 @@ create_time_series(data %>%
 
 ##### Daily Trend
 
-Variance appears to tighten up in 2016-2017 and the obvious drop in late 2016 to 2017 will cause problems for most models. Forecasting or predicting could prove difficult if the model isn't able to account for the sudden drop.
+Variance appears to tighten up in 2016-2017 and the obvious drop in late 2016 to 2017 will cause problems for most models. Forecasting or predicting could prove difficult if the model isn't able to account for the sudden drop. The drop is also temporary, meaning it will always exist at the end of the time series because that cross-sell conversion requires time to happen. Recent orders purchased (say in the last week, or end of the time series) will have a very low percent of cross-sells because most of the cross-sells require more time to occur. A few weeks/months later that cross-sell percentage will have increased dramatically, because sufficient time has occurred to allow the customer time to buy the cross-sell product. In short, modeling the cross-sell percentage will always have this limitation (recent drop) and one would have to overcome that by weighting past observations higher than the most recent. It would be somewhat difficult (definitely tricky).
 
 ```{r dailyPct}
 data %>%
@@ -267,7 +287,7 @@ data %>%
          title = "Percent of DNA Orders Created Converted to Xsell")
 ```
 
-A more detailed view of this daily xsell conversion may help us understand what is influencing this behavior and how that might affect model construction.
+A more detailed view of this daily xsell conversion may help us understand what is influencing this behavior and how that might affect model construction. Given the statements above it wouldn't be wise to pursue this further, so I only show it broken out by the customer type group. 
 
 ```{r dailyPctByVars1, fig.height = 4}
 # dailyPctByVar <- function(data, facetVar) {
@@ -307,47 +327,6 @@ A more detailed view of this daily xsell conversion may help us understand what 
     theme(strip.text.x = element_text(angle = 0)) +
     labs(x = "", y = "Percent",
          title = "Percent of DNA Orders Created Converted to Xsell")
-```
-
-```{r dailyPctByRegtenure, fig.height = 4}
-  data %>%
-    filter(ordercreatedate > "2000-01-01") %>%
-    mutate(regtenure = factor(regtenure, 
-                              levels = c("No Reg Date", "Order prior to reg",
-                                         "<=10 days", "<=20 days", "<=30 days",
-                                         "<=60 days", "<=90 days", "<=120 days",
-                                         "More than 120 days old"))) %>%
-    group_by(ordercreatedate, regtenure) %>%
-    mutate(
-      xsell_120rule = if_else(xsell_day_exact <= 120, 1, 0),
-      xsell = if_else(xsell_120rule & xsell_gsa, 1, 0)
-    ) %>%
-    summarise(PercentConverted = sum(xsell) / length(xsell)) %>%
-    ggplot(aes(x = ordercreatedate, y = PercentConverted)) +
-    geom_point(alpha = 0.25) +
-    scale_y_continuous(limits = c(0,1), 
-                       breaks = seq(0,1,by=.2), 
-                       labels = paste0(seq(0,1,by=.2)*100, "%")) +
-    facet_wrap(~ regtenure) +
-    theme_bw() +
-    labs(x = "", y = "Percent",
-         title = "Percent of DNA Orders Created Converted to Xsell")
-```
-
-
-I must not understand the **regtenure** column yet.
-```{r histExactVsRegtenure, fig.height = 4}
-data %>% 
-  filter(ordercreatedate > "2000-01-01") %>% 
-    mutate(regtenure = factor(regtenure, 
-                              levels = c("No Reg Date", "Order prior to reg",
-                                         "<=10 days", "<=20 days", "<=30 days",
-                                         "<=60 days", "<=90 days", "<=120 days",
-                                         "More than 120 days old"))) %>%
-  ggplot(aes(x = xsell_day_exact)) + 
-    geom_histogram() + 
-    theme_bw() + 
-    facet_wrap(~regtenure, scales = "free")
 ```
 
 
